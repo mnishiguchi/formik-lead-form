@@ -1,12 +1,22 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withFormik } from 'formik';
+import _ from 'lodash';
 import Yup from 'yup';
-import { Button, Input, Level, Textarea, Control, Icon } from 'reactbulma';
+import {
+  Button,
+  Input,
+  Textarea,
+  Control,
+  Icon,
+  Checkbox,
+  Notification
+} from 'reactbulma';
 import FormErrorMessage from './FormErrorMessage';
 
 // https://github.com/jaredpalmer/formik
-// https://react.semantic-ui.com/collections/form#form-example-subcomponent-control
+// https://kulakowka.github.io/react-bulma
+// https://bulma.io/documentation/form/general/
 const InnerForm = props => {
   const {
     values,
@@ -29,14 +39,14 @@ const InnerForm = props => {
         <Input
           type="name"
           name="name"
-          placeholder="Enter your name"
+          placeholder="Name"
           value={values.name}
           onChange={handleChange}
           onBlur={handleBlur}
           className={errors.name && touched.name ? 'is-danger' : ''}
         />
         <Icon right>
-          <i className="fa fa-home" />
+          <i className="fa fa-user" />
         </Icon>
       </Control>
 
@@ -44,7 +54,7 @@ const InnerForm = props => {
         <Input
           type="email"
           name="email"
-          placeholder="Enter your email"
+          placeholder="Email"
           value={values.email}
           onChange={handleChange}
           onBlur={handleBlur}
@@ -59,7 +69,7 @@ const InnerForm = props => {
         <Input
           type="phone"
           name="phone"
-          placeholder="Enter your phone"
+          placeholder="Phone"
           value={values.phone}
           onChange={handleChange}
           onBlur={handleBlur}
@@ -69,18 +79,6 @@ const InnerForm = props => {
           <i className="fa fa-phone" />
         </Icon>
       </Control>
-
-      <div className="control is-expanded">
-        <span className="select">
-          <select name="moveIn" value={values.moveIn} onChange={handleChange}>
-            <option>Move in</option>
-            <option value="1">Immediately</option>
-            <option value="2">In 2 weeks</option>
-            <option value="4">In a month</option>
-            <option value="12">In 3 months</option>
-          </select>
-        </span>
-      </div>
 
       <Textarea
         type="message"
@@ -93,30 +91,57 @@ const InnerForm = props => {
         rows={2}
       />
 
+      <Checkbox
+        name="subscribe"
+        value={values.subscribe}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        defaultChecked={true}
+        className={errors.subscribe && touched.subscribe && 'is-danger'}
+      >
+        Update me with the latest apartments and specials.
+      </Checkbox>
+
       {
         <div style={{ margin: '1rem 0' }}>
           <FormErrorMessage errors={errors} touched={touched} />
         </div>
       }
 
-      <Button onClick={handleReset} disabled={!dirty || isSubmitting}>
-        Reset
-      </Button>
-      <Button type="submit" disabled={isSubmitting}>
-        Sign Up
-      </Button>
+      <div>
+        <Button onClick={handleReset} disabled={!dirty || isSubmitting}>
+          Reset
+        </Button>
+        <Button success disabled={isSubmitting}>
+          Contact Property
+        </Button>
+      </div>
+
+      <Notification>
+        <Button
+          onClick={e => {
+            e.preventDefault();
+            localStorage.clear();
+          }}
+        >
+          Clear local storage
+        </Button>
+      </Notification>
     </form>
   );
 };
 
 const FormikLeadForm = withFormik({
-  mapPropsToValues: () => ({
-    name: '',
-    email: '',
-    phone: '',
-    moveIn: '',
-    message: ''
-  }),
+  mapPropsToValues: () => {
+    const storedValues = JSON.parse(localStorage.getItem('contactForm')) || {};
+    return {
+      name: storedValues.name || '',
+      email: storedValues.email || '',
+      phone: '',
+      message: '',
+      subscribe: true
+    };
+  },
   validationSchema: Yup.object().shape({
     name: Yup.string().required('Name is required'),
     email: Yup.string()
@@ -124,13 +149,13 @@ const FormikLeadForm = withFormik({
       .required('Email is required')
   }),
   handleSubmit: (values, { setSubmitting, setFieldError }) => {
-    // Rails wants all the fields to have rails-compatible field names.
-    const params = { ...values, move_date: values.moveIn };
-
     // Simulate async request
     setTimeout(() => {
-      // TODO: Replace this with axios or fetch.
-      alert(JSON.stringify(params, null, 2));
+      alert(JSON.stringify(values, null, 2));
+      localStorage.setItem(
+        'contactForm',
+        JSON.stringify(_.pick(values, ['name', 'email']))
+      );
 
       setSubmitting(false);
     }, 500);
